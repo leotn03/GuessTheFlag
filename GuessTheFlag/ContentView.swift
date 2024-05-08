@@ -10,12 +10,19 @@ import SwiftUI
 struct FlagImage: View {
     var number: Int
     var countries: [String]
+    var rotateAmount: Double
+    var opacityAmount: Double
+    var scaleAmount: Double
     
     var body: some View {
         Image(countries[number])
             .renderingMode(.original)
             .clipShape(Capsule())
             .shadow(radius: 5)
+            .opacity(opacityAmount)
+            .scaleEffect(scaleAmount)
+            .rotation3DEffect(.degrees(Double(rotateAmount)),
+                              axis: (x: 0.0, y: 1.0, z: 0.0))
     }
 }
 
@@ -42,10 +49,13 @@ struct ContentView: View {
     @State private var gameCount = 0
     @State private var restartGame = false
     @State private var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Monaco", "Nigeria", "Poland", "Russia", "Spain", "UK", "US"].shuffled()
-    @State private var correctAnswer = Int.random(in: 0...2)
-    @State private var animationAmount = 1.0
+    @State private var correctAnswer = Int.random(in: 0...3)
     
-    @State private var isTapped = false
+    @State private var isTapped = -1
+    
+    @State private var rotateAmount = 0.0
+    @State private var opacityAmount = 1.0
+    @State private var scaleAmount = 1.0
     
     var body: some View {
         ZStack {
@@ -61,7 +71,7 @@ struct ContentView: View {
                 Text("Guess the Flag")
                     .changeTitle()
                 
-                VStack(spacing: 15) {
+                VStack(spacing: 20) {
                     VStack {
                         Text("Tap the flag of")
                             .foregroundStyle(.secondary)
@@ -71,36 +81,29 @@ struct ContentView: View {
                             .font(.largeTitle.weight(.semibold))
                     }
                     
-                    ForEach(0..<3){ number in
+                    ForEach(0..<4, id: \.self){ number in
                         Button {
                             flagTapped(number)
-                            withAnimation{
-                                animationAmount += 1
-                                /*
-                                 if isTapped {
-                                 rotation3DEffect(.degrees(animationAmount), axis: (x: 0.0, y: 1.0, z: 0.0))
-                                 }else {
-                                 Animation.easeInOut(duration: 1).repeatCount(3).animate(value: animationAmount)
-                                 }*/
+                            withAnimation(.spring(duration: 1, bounce: 0.5)) {
+                                rotateAmount += 360
+                            }
+                            withAnimation() {
+                                opacityAmount -= 0.55
+                                scaleAmount -= 0.3
                             }
                         } label: {
-                            FlagImage(number: number, countries: countries)
+                            FlagImage(number: number, countries: countries,rotateAmount: (isTapped == number ? rotateAmount : 0),
+                                      opacityAmount: (isTapped == number ? 1 : opacityAmount),
+                                      scaleAmount: (isTapped == number ? 1 : scaleAmount))
                         }
-                        //.rotation3DEffect(.degrees(animationAmount), axis: (x: 0.0, y: 1.0, z: 0.0))
-                        //.animation(.default, value: animationAmount)
-                        //.scaleEffect(animationAmount)
-                        //                        .animation(
-                        //                            .easeInOut(duration: 1)
-                        //                            .repeatCount(3), value: animationAmount
-                        //                        )
-                        
-                        
                     }
+                    
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
                 .background(.thinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .clipShape(RoundedRectangle(cornerRadius: 15))
+
                 
                 Spacer()
                 Spacer()
@@ -113,36 +116,37 @@ struct ContentView: View {
             }
             .padding()
         }
-        /*
-         .alert(scoreTitle, isPresented: $showingScore) {
-         Button("Continue", action: askQuestion)
-         } message: {
-         Text("Your score is \(scoreCount)")
-         }
-         .alert(scoreTitle, isPresented: $showFinalScore) {
-         Button("Continue"){ restartGame = true }
-         } message: {
-         Text("Your score is \(scoreCount)")
-         }
-         .alert(finalScoreTitle, isPresented: $restartGame){
-         Button("Continue", action: reset)
-         } message: {
-         Text("Your final score is \(scoreCount)")
-         }
-         */
+        
+        .alert(scoreTitle, isPresented: $showingScore) {
+            Button("Continue", action: askQuestion)
+        } message: {
+            Text("Your score is \(scoreCount)")
+        }
+        .alert(scoreTitle, isPresented: $showFinalScore) {
+            Button("Continue"){ restartGame = true }
+        } message: {
+            Text("Your score is \(scoreCount)")
+        }
+        .alert(finalScoreTitle, isPresented: $restartGame){
+            Button("Continue"){
+                askQuestion()
+                reset()
+            }
+        } message: {
+            Text("Your final score is \(scoreCount)")
+        }
+        
     }
     
     func flagTapped (_ number: Int) {
         gameCount += 1
-        isTapped = true
+        isTapped = number
         
         if number == correctAnswer {
-            isTapped = true
             scoreCount += 1
             scoreTitle = "CORRECT!"
         }else {
-            isTapped = false
-            scoreTitle = "WRONG!, That's the flag of " + countries[number]
+            scoreTitle = "WRONG!, That's the flag of " + countries[number].uppercased()
         }
         
         if gameCount == 5 {
@@ -156,15 +160,16 @@ struct ContentView: View {
     
     func askQuestion () {
         countries.shuffle()
-        correctAnswer = Int.random(in: 0...2)
-        isTapped = false
+        correctAnswer = Int.random(in: 0...3)
+        rotateAmount = 0.0
+        opacityAmount = 1.0
+        scaleAmount = 1.0
+        isTapped = -1
     }
     
     func reset() {
-        scoreCount = 0
         gameCount = 0
-        countries.shuffle()
-        isTapped = false
+        scoreCount = 0
     }
 }
 
