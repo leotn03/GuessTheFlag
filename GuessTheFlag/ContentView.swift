@@ -88,7 +88,7 @@ struct ContentView: View {
                                 rotateAmount += 360
                             }
                             withAnimation() {
-                                opacityAmount -= 0.55
+                                opacityAmount -= 0.75
                                 scaleAmount -= 0.3
                             }
                         } label: {
@@ -149,7 +149,7 @@ struct ContentView: View {
             scoreTitle = "WRONG!, That's the flag of " + countries[number].uppercased()
         }
         
-        if gameCount == 5 {
+        if gameCount == 4 {
             showingScore = false
             showFinalScore = true
             return
@@ -159,17 +159,21 @@ struct ContentView: View {
     }
     
     func askQuestion () {
-        countries.shuffle()
-        correctAnswer = Int.random(in: 0...3)
-        rotateAmount = 0.0
-        opacityAmount = 1.0
-        scaleAmount = 1.0
-        isTapped = -1
+        //A better way to show changes
+        withAnimation {
+            countries.shuffle()
+            correctAnswer = Int.random(in: 0...3)
+            rotateAmount = 0.0
+            opacityAmount = 1.0
+            scaleAmount = 1.0
+            isTapped = -1
+        }
     }
     
     func reset() {
         gameCount = 0
         scoreCount = 0
+        countries.shuffle()
     }
 }
 
